@@ -17,8 +17,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_eSEk_wwNGUVAnE6kkQQtjw_mlUM4BKg';
    --------------------------------------------------------- */
 const SITE_OWNER = {
   name: 'Jasper Haag',
-  street: '',
-  city: '',
+  street: '',           // ← Postanschrift (Straße, Hausnummer) – noch offen
+  city: '',             // ← PLZ und Ort – noch offen
   email: 'icy3309adi@gmail.com',
 };
 

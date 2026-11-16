@@ -7,8 +7,11 @@ const LEGAL_UPDATED = '16. November 2026';
 
 function ownerBlock() {
   const o = SITE_OWNER;
-  return `${esc(o.name)}<br>${esc(o.street)}<br>${esc(o.city)}`
-    + (o.email ? `<br>E-Mail: <a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : '');
+  const lines = [esc(o.name)];
+  if (o.street || o.city) lines.push(esc(o.street), esc(o.city));
+  else lines.push('<span class="muted">Postanschrift wird nachgetragen</span>');
+  if (o.email) lines.push(`E-Mail: <a href="mailto:${esc(o.email)}">${esc(o.email)}</a>`);
+  return lines.filter(Boolean).join('<br>');
 }
 
 function imprintHTML() {
@@ -24,7 +27,7 @@ function imprintHTML() {
 
 function privacyHTML() {
   const contact = SITE_OWNER.email
-    ? `per E-Mail an <a href="mailto:${esc(SITE_OWNER.email)}">${esc(SITE_OWNER.email)}</a> oder per Post an die oben genannte Adresse`
+    ? `per E-Mail an <a href="mailto:${esc(SITE_OWNER.email)}">${esc(SITE_OWNER.email)}</a>`
     : 'per Post an die oben genannte Adresse';
   return `
     <h2>Datenschutzerklärung</h2>
