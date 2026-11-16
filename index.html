@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Schutz gegen eingeschleusten Code: nur eigene Dateien, Supabase und die geprüfte Bibliothek von jsDelivr -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Tastenrausch – 10-Finger-Tippen lernen</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <canvas id="fx"></canvas>
@@ -17,13 +18,14 @@
       <div class="pill" title="Tage in Folge gespielt">🔥 <b id="dayStreak">0</b> <small>Tage</small></div>
       <div class="pill" title="Gesammelte Sterne">⭐ <b id="starCount">0</b></div>
       <div class="pill" title="Gesamtpunkte">🏆 <b id="totalScore">0</b></div>
-      <div class="pill rank" id="rank">Tipp-Neuling</div>
+      <button class="pill rank" id="rank" aria-haspopup="true" aria-expanded="false" title="Alle Ränge anzeigen">Tipp-Neuling ▾</button>
       <button class="pill account" id="accountBtn" hidden>🔑 Anmelden</button>
       <button class="pill" id="settingsBtn" title="Sprache & Tastatur-Layout">⚙️ <span id="settingsLabel"></span></button>
       <button class="pill btn-icon" id="musicBtn" title="Menü-Musik an/aus">🎵</button>
       <button class="pill btn-icon" id="muteBtn" title="Ton an/aus">🔊</button>
     </div>
   </header>
+  <div class="rank-menu" id="rankMenu" hidden></div>
 
   <!-- ===== STARTSEITE ===== -->
   <main id="home" class="screen">
@@ -197,6 +199,7 @@
         <p class="muted">Nichts angekommen? Schau im Spam-Ordner nach.</p>
       </div>
       <p class="err" id="loginErr"></p>
+      <p class="muted small-print">Mit der Anmeldung werden deine E-Mail-Adresse und Spieldaten gespeichert – mehr in der <a href="#" data-legal="privacy">Datenschutzerklärung</a>.</p>
       <button class="ghost" data-close>Schließen</button>
     </div>
   </div>
@@ -231,22 +234,44 @@
     </div>
   </div>
 
+  <div class="modal form" id="legalModal">
+    <div class="card legal">
+      <div class="legal-body" id="legalBody"></div>
+      <button class="primary" data-close>Schließen</button>
+    </div>
+  </div>
+
+  <div class="rankup" id="rankUp" hidden>
+    <div class="ru-rays"></div>
+    <div class="ru-content">
+      <div class="ru-label">RANK UP!</div>
+      <div class="ru-icon" id="ruIcon"></div>
+      <div class="ru-name" id="ruName"></div>
+      <div class="ru-sub" id="ruSub"></div>
+      <div class="ru-hint">Klicken oder Taste drücken</div>
+    </div>
+  </div>
+
+  <footer class="site-footer"><a href="#" data-legal="privacy">Datenschutz</a> · <a href="#" data-legal="imprint">Impressum</a></footer>
+
   <div class="announce" id="announce"><div class="a-title" id="aTitle"></div><div class="a-sub" id="aSub"></div></div>
   <div class="toasts" id="toasts"></div>
 
-  <script src="js/config.js?v=4"></script>
-  <script src="js/data.js?v=4"></script>
-  <script src="js/words.js?v=4"></script>
-  <script src="js/store.js?v=4"></script>
-  <script src="js/fx.js?v=4"></script>
-  <script src="js/music.js?v=4"></script>
-  <script src="js/ui.js?v=4"></script>
-  <script src="js/engine.js?v=4"></script>
-  <script src="js/net.js?v=4"></script>
-  <script src="js/social.js?v=4"></script>
-  <script src="js/battle.js?v=4"></script>
-  <script src="js/game.js?v=4"></script>
-  <script src="js/endless.js?v=4"></script>
-  <script src="js/main.js?v=4"></script>
+  <script src="js/config.js?v=5"></script>
+  <script src="js/data.js?v=5"></script>
+  <script src="js/words.js?v=5"></script>
+  <script src="js/store.js?v=5"></script>
+  <script src="js/fx.js?v=5"></script>
+  <script src="js/music.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/engine.js?v=5"></script>
+  <script src="js/net.js?v=5"></script>
+  <script src="js/social.js?v=5"></script>
+  <script src="js/battle.js?v=5"></script>
+  <script src="js/game.js?v=5"></script>
+  <script src="js/endless.js?v=5"></script>
+  <script src="js/legal.js?v=5"></script>
+  <script src="js/ranks.js?v=5"></script>
+  <script src="js/main.js?v=5"></script>
 </body>
 </html>

@@ -1,3 +1,8 @@
+/* Schriften lokal (keine Verbindung zu Google) – Lizenz: SIL Open Font License 1.1, siehe fonts/LICENSE.txt */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(fonts/inter.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 100 800; font-display: swap; src: url(fonts/jetbrains-mono.woff2) format('woff2'); }
+@font-face { font-family: 'Orbitron'; font-style: normal; font-weight: 400 900; font-display: swap; src: url(fonts/orbitron.woff2) format('woff2'); }
+
 :root {
   --bg: #0a0c16;
   --bg2: #121528;
@@ -454,3 +459,65 @@ input[type=range] { padding: 0; accent-color: var(--accent2); }
 
 /* Login: Umschalter Link / Passwort */
 #loginModeSeg { margin-bottom: 12px; }
+
+/* ===== Rang-Dropdown ===== */
+.pill.rank { cursor: pointer; }
+.rank-menu { position: fixed; z-index: 70; width: min(380px, calc(100vw - 24px)); max-height: calc(100vh - 90px); overflow: auto;
+  background: #141631; border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.rm-head { display: flex; gap: 12px; align-items: center; }
+.rm-icon { font-size: 34px; }
+.rm-title { font-family: Orbitron, sans-serif; font-weight: 900; font-size: 18px; }
+.rm-next { margin: 12px 0; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+.rm-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.rm-list li { display: grid; grid-template-columns: 28px 1fr 110px; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; }
+.rm-list li.me { background: rgba(255,255,255,.07); outline: 1px solid var(--rc); }
+.rm-list li.done { opacity: .65; }
+.rm-i { font-size: 18px; text-align: center; }
+.rm-n { display: flex; flex-direction: column; }
+.rm-n b { color: var(--rc); font-size: 14px; }
+.rm-n small { color: var(--muted); font-size: 11px; }
+.rm-p { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); justify-content: flex-end; }
+.rm-pbar { width: 50px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.rm-pbar span { display: block; height: 100%; background: var(--rc); }
+.rm-foot { margin-top: 12px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.rm-foot summary { cursor: pointer; color: #fff; margin-top: 8px; font-weight: 600; }
+.rm-foot ul { padding-left: 18px; margin: 6px 0 0; }
+
+/* ===== Rank-Up (Vollbild) ===== */
+.rankup { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; overflow: hidden; cursor: pointer;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--rc) 30%, #0b0c1f) 0%, #080918 70%); }
+.ru-rays { position: absolute; width: 220vmax; height: 220vmax; left: 50%; top: 50%; translate: -50% -50%; opacity: .25;
+  background: repeating-conic-gradient(var(--rc) 0deg 6deg, transparent 6deg 20deg); animation: ruSpin 14s linear infinite;
+  mask: radial-gradient(circle, #000 0%, transparent 55%); -webkit-mask: radial-gradient(circle, #000 0%, transparent 55%); }
+.ru-content { position: relative; text-align: center; padding: 20px; }
+.ru-label { font-family: Orbitron, sans-serif; font-weight: 900; letter-spacing: 8px; font-size: clamp(18px, 3vw, 28px); color: #fff; opacity: .9; }
+.ru-icon { font-size: clamp(80px, 16vw, 160px); line-height: 1.1; margin: 10px 0; filter: drop-shadow(0 0 30px var(--rc)); }
+.ru-name { font-family: Orbitron, sans-serif; font-weight: 900; font-size: clamp(34px, 7vw, 84px); color: var(--rc); letter-spacing: 2px;
+  text-shadow: 0 0 24px var(--rc), 0 0 70px var(--rc); -webkit-text-stroke: 1px rgba(255,255,255,.5); }
+.ru-sub { margin-top: 12px; color: #fff; font-size: 16px; opacity: .85; }
+.ru-hint { margin-top: 28px; color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+.rankup.show { animation: ruFade .35s ease-out; }
+.rankup.show .ru-label { animation: ruDrop .6s .1s both cubic-bezier(.2,1.6,.4,1); }
+.rankup.show .ru-icon { animation: ruPop .8s .25s both cubic-bezier(.2,1.8,.4,1); }
+.rankup.show .ru-name { animation: ruZoom .9s .45s both cubic-bezier(.2,1.4,.4,1); }
+.rankup.show .ru-sub, .rankup.show .ru-hint { animation: ruFade .6s 1s both; }
+@keyframes ruSpin { to { rotate: 360deg; } }
+@keyframes ruFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ruDrop { from { opacity: 0; transform: translateY(-40px); } to { opacity: .9; transform: none; } }
+@keyframes ruPop { from { opacity: 0; transform: scale(.2) rotate(-25deg); } to { opacity: 1; transform: none; } }
+@keyframes ruZoom { from { opacity: 0; transform: scale(2.6); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@media (prefers-reduced-motion: reduce) { .ru-rays { animation: none; } .rankup.show * { animation-duration: .01s !important; } }
+
+/* ===== Rechtliches & Footer ===== */
+.site-footer { text-align: center; font-size: 12px; color: var(--muted); padding: 10px 0 24px; }
+.site-footer a, .small-print a, .legal-body a, .danger-zone a { color: var(--accent2); }
+body[data-screen="game"] .site-footer { display: none; }
+.small-print { font-size: 12px; line-height: 1.5; }
+.card.legal { width: min(760px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.legal-body { overflow: auto; padding-right: 6px; line-height: 1.6; font-size: 14px; }
+.legal-body h2 { margin-top: 0; }
+.legal-body h3 { margin: 18px 0 6px; font-size: 15px; }
+.legal-body ul { padding-left: 20px; }
+.danger-zone { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ghost.danger { border-color: rgba(255,77,109,.5); color: var(--bad); }
+.ghost.danger:hover { background: rgba(255,77,109,.12); border-color: var(--bad); }

@@ -11,4 +11,15 @@
 const SUPABASE_URL = 'https://snukzearccqogwdzguhw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_eSEk_wwNGUVAnE6kkQQtjw_mlUM4BKg';
 
+/* ---------------------------------------------------------
+   Angaben für Impressum und Datenschutzerklärung.
+   Die E-Mail-Adresse ist für das Impressum Pflicht (§ 5 DDG).
+   --------------------------------------------------------- */
+const SITE_OWNER = {
+  name: 'Jasper Haag',
+  street: '',
+  city: '',
+  email: '',            // ← Kontakt-E-Mail eintragen
+};
+
 const SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);

@@ -315,6 +315,20 @@ function initLeaderboard() {
 }
 
 /* ---------- Profil ---------- */
+async function deleteAccount() {
+  const name = NET.profile?.username;
+  const typed = prompt(`Account wirklich endgültig löschen? Das kann nicht rückgängig gemacht werden.\n\nTippe zur Bestätigung deinen Spielernamen „${name}“ ein:`);
+  if (typed === null) return;
+  if (typed.trim() !== name) { toast('❌ Der Name stimmt nicht – nichts gelöscht.'); return; }
+  try {
+    await rpc('delete_my_account');
+    leaveRoom(); socialStop();
+    await NET.sb.auth.signOut().catch(() => {});
+    toast('🗑 Dein Account wurde gelöscht. Dein lokaler Singleplayer-Spielstand in diesem Browser bleibt erhalten.');
+    showScreen('home');
+  } catch (e) { toast('❌ Löschen fehlgeschlagen: ' + esc(e.message)); }
+}
+
 async function renderProfile() {
   const p = NET.profile, me = NET.user.id;
   const el = $('#tab-profile');
@@ -337,7 +351,14 @@ async function renderProfile() {
       <button class="primary">Speichern</button>
       <span class="muted" id="pwMsg">Damit kannst du dich auf jedem Gerät ohne Login-Mail anmelden.</span>
     </form>
-    <h3>Letzte Battles</h3><div id="recentBattles"><p class="muted">Lade …</p></div>`;
+    <h3>Letzte Battles</h3><div id="recentBattles"><p class="muted">Lade …</p></div>
+    <h3>Account</h3>
+    <div class="panel danger-zone">
+      <span class="muted">Löscht deinen Account mit Profil, Punkten, Freundschaften und Battles endgültig.
+        Mehr in der <a href="#" data-legal="privacy">Datenschutzerklärung</a>.</span>
+      <button class="ghost danger" id="deleteAccBtn">Account löschen</button>
+    </div>`;
+  $('#deleteAccBtn').onclick = deleteAccount;
   $('#logoutBtn').onclick = async () => { await signOut(); showScreen('home'); };
   $('#pwForm').onsubmit = async (e) => {
     e.preventDefault();

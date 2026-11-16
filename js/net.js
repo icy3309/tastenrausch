@@ -5,16 +5,21 @@
    der Singleplayer funktioniert immer auch ohne.
    ========================================================= */
 const SB_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+// Prüfsumme: Der Browser führt die Datei nur aus, wenn sie exakt dieser Version entspricht
+// (schützt davor, dass jemand die Datei beim CDN austauscht).
+const SB_SRI = 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o';
 const NET = { sb: null, user: null, profile: null, ready: !SUPABASE_CONFIGURED, error: '', subs: [] };
 
 const onNetChange = (fn) => NET.subs.push(fn);
 const netNotify = () => NET.subs.forEach((f) => f());
 const loggedIn = () => Boolean(NET.profile);
 
-function loadScript(src) {
+function loadScript(src, integrity) {
   return new Promise((res, rej) => {
     const s = document.createElement('script');
     s.src = src;
+    if (integrity) { s.integrity = integrity; s.crossOrigin = 'anonymous'; }
+    s.referrerPolicy = 'no-referrer';
     s.onload = res;
     s.onerror = () => rej(new Error('Supabase-Bibliothek konnte nicht geladen werden (offline?)'));
     document.head.appendChild(s);
@@ -24,7 +29,7 @@ function loadScript(src) {
 async function netInit() {
   if (!SUPABASE_CONFIGURED) return;
   try {
-    await loadScript(SB_CDN);
+    await loadScript(SB_CDN, SB_SRI);
     NET.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // Kein await auf Supabase direkt im Callback (sonst Deadlock) → setTimeout.
     NET.sb.auth.onAuthStateChange((_e, session) => setTimeout(() => handleSession(session), 0));

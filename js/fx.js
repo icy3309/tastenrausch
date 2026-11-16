@@ -68,8 +68,10 @@ const Sound = {
     if (save.muted || !window.speechSynthesis) return;
     try {
       const u = new SpeechSynthesisUtterance(text);
-      const v = speechSynthesis.getVoices().filter((x) => /^en/i.test(x.lang));
-      u.voice = v.find((x) => /daniel|fred|alex|male|google uk/i.test(x.name)) || v[0] || null;
+      // Nur Stimmen, die auf dem Gerät laufen – Online-Stimmen (z.B. in Chrome) würden den Text an einen Server schicken
+      const v = speechSynthesis.getVoices().filter((x) => /^en/i.test(x.lang) && x.localService);
+      if (!v.length) return;
+      u.voice = v.find((x) => /daniel|fred|alex|male/i.test(x.name)) || v[0];
       u.lang = 'en-US'; u.pitch = 0.2; u.rate = 0.85; u.volume = 0.9;
       speechSynthesis.cancel(); speechSynthesis.speak(u);
     } catch {}
@@ -144,6 +146,13 @@ const Sound = {
     this.note(midi(57), 0.4, { type: 'triangle', vol: 0.1 });
   },
   beep(hi) { hi ? this.go() : this.countdown(); },
+  rankUp() {
+    this.noise(0.9, { vol: 0.06, from: 200, to: 9000, type: 'bandpass', q: 2 });
+    this.arp([60, 64, 67, 72, 76, 79, 84], 0.07, { vol: 0.05, dur: 0.12, when: 0.3 });
+    [72, 76, 79, 84].forEach((m) => this.note(midi(m), 1.4, { type: 'sawtooth', vol: 0.022, when: 0.85, vib: 6 }));
+    this.note(midi(48), 1.4, { type: 'triangle', vol: 0.1, when: 0.85 });
+    setTimeout(() => this.voice('Rank up'), 700);
+  },
   notify() { this.arp([79, 84, 88], 0.07, { vol: 0.045, dur: 0.12 }); },
 
   /* ---- Menü ---- */

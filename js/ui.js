@@ -13,6 +13,7 @@ function onEnter(id, fn) { UI.enterHooks[id] = fn; }
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
   UI.current = id;
+  document.body.dataset.screen = id;
   UI.enterHooks[id]?.();
   refreshHeader();
   Music.update();

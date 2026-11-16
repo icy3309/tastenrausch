@@ -5,9 +5,10 @@ function renderHeader() {
   const totalStars = Object.values(save.stars).reduce((a, b) => a + b, 0);
   $('#dayStreak').textContent = currentDayStreak();
   $('#starCount').textContent = `${totalStars}/${LEVELS.length * 3}`;
-  const total = loggedIn() ? Math.max(save.total, NET.profile.total_score) : save.total;
+  const total = currentTotal(), ri = rankIndex(total);
   $('#totalScore').textContent = fmt(total);
-  $('#rank').textContent = rankFor(total);
+  $('#rank').textContent = `${RANK_META[ri].icon} ${RANKS[ri][1]} ▾`;
+  checkRankUp();
   $('#muteBtn').textContent = save.muted ? '🔇' : '🔊';
   $('#musicBtn').style.opacity = Music.enabled ? 1 : 0.35;
   $('#musicBtn').disabled = save.muted;
@@ -99,6 +100,8 @@ function init() {
 
   // Tastatur
   document.addEventListener('keydown', (e) => {
+    if (hideRankUp()) { e.preventDefault(); return; }
+    if (e.key === 'Escape' && !$('#rankMenu').hidden) { toggleRankMenu(false); return; }
     if (modalKey(e)) return;
     if (UI.current === 'game' && UI.run) {
       if (e.key === 'Escape') { leaveGame(); return; }
@@ -110,6 +113,8 @@ function init() {
   });
 
   initAuthForms();
+  initLegal();
+  initRanks();
   initFriends();
   initLeaderboard();
   initBattleTab();
