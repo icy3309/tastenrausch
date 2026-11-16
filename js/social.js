@@ -116,13 +116,22 @@ function socialStart() {
     .subscribe((s) => { if (s === 'SUBSCRIBED') SOC.lobby.track({ username: NET.profile.username }); });
 
   SOC.inbox = NET.sb.channel('user:' + me);
+  // Absender im Postfach können gefälscht sein → nur Freunde (bzw. der letzte Gegner
+  // bei einer Revanche) werden akzeptiert, und der Name kommt aus der Datenbank.
   SOC.inbox
-    .on('broadcast', { event: 'invite' }, ({ payload }) => onInvite(payload))
-    .on('broadcast', { event: 'decline' }, ({ payload }) => toast(`🙅 <b>${esc(payload.username)}</b> hat deine Herausforderung abgelehnt.`))
-    .on('broadcast', { event: 'friend' }, ({ payload }) => {
-      toast(`👋 <b>${esc(payload.username)}</b> ${payload.accepted ? 'hat deine Freundschaftsanfrage angenommen!' : 'möchte mit dir befreundet sein.'}`,
-        payload.accepted ? [] : [{ label: 'Ansehen', primary: true, onClick: () => { showScreen('online'); setTab('friends'); } }]);
-      loadFriends(onlineVisible('friends'));
+    .on('broadcast', { event: 'invite' }, ({ payload }) => onInvite(payload || {}))
+    .on('broadcast', { event: 'decline' }, ({ payload }) => {
+      const f = knownSender(payload?.from, true);
+      if (f) toast(`🙅 <b>${esc(f.username)}</b> hat deine Herausforderung abgelehnt.`);
+    })
+    .on('broadcast', { event: 'friend' }, async ({ payload }) => {
+      await loadFriends(onlineVisible('friends'));
+      const from = payload?.from;
+      const f = SOC.friends.find((x) => x.id === from) || SOC.requestsIn.find((x) => x.id === from);
+      if (!f) return;
+      const accepted = SOC.friends.includes(f);
+      toast(`👋 <b>${esc(f.username)}</b> ${accepted ? 'hat deine Freundschaftsanfrage angenommen!' : 'möchte mit dir befreundet sein.'}`,
+        accepted ? [] : [{ label: 'Ansehen', primary: true, onClick: () => { showScreen('online'); setTab('friends'); } }]);
     })
     .subscribe();
   loadFriends(false);
@@ -145,7 +154,19 @@ async function sendToUser(uid, event, payload) {
   setTimeout(() => NET.sb.removeChannel(ch), 1000);
 }
 
-function onInvite(p) {
+/** Absender nur akzeptieren, wenn er ein Freund ist (oder bei Revanche der letzte Gegner). */
+function knownSender(id, allowLastOpp) {
+  if (!id) return null;
+  const f = SOC.friends.find((x) => x.id === id);
+  if (f) return { id, username: f.username };
+  if (allowLastOpp && SOC.lastOpp?.id === id) return SOC.lastOpp;
+  return null;
+}
+function onInvite(raw) {
+  const sender = knownSender(raw.from, raw.rematch === true);
+  const code = String(raw.code || '').toUpperCase();
+  if (!sender || !/^[A-F0-9]{6}$/.test(code)) return; // unbekannter Absender oder kaputter Code → ignorieren
+  const p = { from: sender.id, username: sender.username, code, rematch: raw.rematch === true };
   SOC.invites = SOC.invites.filter((i) => i.from !== p.from);
   SOC.invites.push(p);
   Sound.notify();
@@ -161,7 +182,7 @@ function acceptInvite(p) {
 }
 function declineInvite(p) {
   SOC.invites = SOC.invites.filter((i) => i !== p);
-  sendToUser(p.from, 'decline', { username: NET.profile.username });
+  sendToUser(p.from, 'decline', { from: NET.user.id, username: NET.profile.username });
   if (onlineVisible('battle')) renderBattleTab();
 }
 
@@ -219,7 +240,7 @@ function initFriends() {
       if (res === 'requested' || res === 'accepted') {
         $('#friendInput').value = '';
         const { data } = await NET.sb.from('profiles').select('id').ilike('username', name.replace(/_/g, '\\_')).maybeSingle();
-        if (data) sendToUser(data.id, 'friend', { username: NET.profile.username, accepted: res === 'accepted' });
+        if (data) sendToUser(data.id, 'friend', { from: NET.user.id, username: NET.profile.username, accepted: res === 'accepted' });
       }
       loadFriends();
     } catch (err) { msg.textContent = err.message; }
@@ -230,7 +251,7 @@ function initFriends() {
     const id = b.dataset.id, me = NET.user.id;
     if (b.dataset.act === 'accept') {
       await NET.sb.from('friendships').update({ status: 'accepted' }).eq('requester_id', id).eq('addressee_id', me);
-      sendToUser(id, 'friend', { username: NET.profile.username, accepted: true });
+      sendToUser(id, 'friend', { from: NET.user.id, username: NET.profile.username, accepted: true });
     } else if (b.dataset.act === 'remove') {
       await NET.sb.from('friendships').delete().or(`and(requester_id.eq.${id},addressee_id.eq.${me}),and(requester_id.eq.${me},addressee_id.eq.${id})`);
     } else if (b.dataset.act === 'challenge') {

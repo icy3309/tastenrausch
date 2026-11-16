@@ -75,6 +75,13 @@ Updates: Dateien ändern, dann `git commit -am "Update"` und `git push`.
 | `js/battle.js` | Live-Battles über Supabase Realtime |
 | `supabase/schema.sql` | Datenbank, Zugriffsregeln, Server-Funktionen |
 
+## Sicherheit
+
+- **Passwörter & E-Mails** liegen ausschließlich bei Supabase Auth (Tabelle `auth.users`, Passwörter nur als bcrypt-Hash). Sie stehen weder im Code noch in den öffentlichen Tabellen.
+- **Im Repo** steht nur die Projekt-URL und der *Publishable/anon Key* – beide sind öffentlich gedacht. Den *Secret/service_role Key* und das Datenbank-Passwort niemals ins Repo!
+- Zugriffsregeln (RLS) und Server-Funktionen: `supabase/schema.sql`. Bestehende Projekte führen zusätzlich `supabase/update-2-security.sql` aus.
+- Alles, was über den Live-Kanal vom Gegner kommt, wird im Browser geprüft; Ergebnisse und Elo berechnet nur die Datenbank.
+
 ## Hinweise
 
 - Der *anon key* ist öffentlich, das ist so gewollt. Geschützt wird alles über Row-Level-Security: Niemand kann fremde Profile, Punkte oder Elo direkt ändern.

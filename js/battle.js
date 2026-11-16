@@ -21,6 +21,29 @@ const freshBattle = () => ({
 let B = freshBattle();
 const meId = () => NET.user?.id;
 
+/* ---------- Eingehende Nachrichten prüfen ----------
+   Alles, was über den Live-Kanal kommt, kann ein Gegner manipuliert haben.
+   Deshalb werden nur bekannte Felder mit erlaubten Werten übernommen. */
+const num = (v, min, max, def = 0) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def; };
+function cleanSettings(p = {}) {
+  return {
+    mode: p.mode === 'timed' ? 'timed' : 'race',
+    duration_s: DURATIONS.includes(+p.duration_s) ? +p.duration_s : 60,
+    attacks: p.attacks === true,
+    level: Math.round(num(p.level, 0, LEVEL_DEFS.length - 1, 13)),
+    lang: LANGS[p.lang] ? p.lang : 'de',
+  };
+}
+const cleanStart = (p = {}) => ({ ...cleanSettings(p), ascii: p.ascii === true, seed: Math.round(num(p.seed, 1, 2147483647, 1)) });
+const cleanProgress = (p = {}) => ({
+  pos: num(p.pos, 0, 1e5), len: num(p.len, 1, 1e5, 1), score: num(p.score, 0, 1e8),
+  streak: Math.round(num(p.streak, 0, 1e5)), tier: Math.round(num(p.tier, 0, TIERS.length - 1)),
+});
+const cleanResult = (r) => (r && typeof r === 'object' ? {
+  finished: r.finished === true, time: num(r.time, 0, 36e5), pos: num(r.pos, 0, 1e5), score: num(r.score, 0, 1e8),
+  wpm: Math.round(num(r.wpm, 0, 300)), acc: Math.round(num(r.acc, 0, 100)), maxStreak: Math.round(num(r.maxStreak, 0, 1e5)),
+} : null);
+
 /* ---------- Lobby-Aktionen ---------- */
 async function quickMatch() {
   try { enterRoom(await rpc('quick_match')); }
@@ -57,26 +80,29 @@ function enterRoom(b, presetSettings = null) {
   const ch = NET.sb.channel('battle:' + b.id, { config: { broadcast: { self: false }, presence: { key: meId() } } });
   B.ch = ch;
   ch.on('presence', { event: 'sync' }, onPresence)
-    .on('broadcast', { event: 'settings' }, ({ payload }) => { if (!B.isHost) { B.settings = payload; if (B.phase === 'room') renderBattleTab(); } })
-    .on('broadcast', { event: 'start' }, ({ payload }) => { if (!B.isHost) beginCountdown(payload); })
-    .on('broadcast', { event: 'progress' }, ({ payload }) => { B.oppState = payload; drawRace(); })
-    .on('broadcast', { event: 'attack' }, ({ payload }) => receiveAttack(payload))
-    .on('broadcast', { event: 'finish' }, ({ payload }) => onOppFinish(payload))
-    .on('broadcast', { event: 'result' }, ({ payload }) => showBattleResult(payload))
+    .on('broadcast', { event: 'settings' }, ({ payload }) => { if (!B.isHost) { B.settings = cleanSettings(payload); if (B.phase === 'room') renderBattleTab(); } })
+    .on('broadcast', { event: 'start' }, ({ payload }) => { if (!B.isHost) beginCountdown(cleanStart(payload)); })
+    .on('broadcast', { event: 'progress' }, ({ payload }) => { B.oppState = cleanProgress(payload); drawRace(); })
+    .on('broadcast', { event: 'attack' }, ({ payload }) => receiveAttack({ kind: ATTACKS[payload?.kind] ? payload.kind : 'fog' }))
+    .on('broadcast', { event: 'finish' }, ({ payload }) => onOppFinish(cleanResult(payload) || {}))
+    // Das Endergebnis nie aus der Nachricht übernehmen, sondern aus der Datenbank holen
+    .on('broadcast', { event: 'result' }, () => fetchFinishedBattle())
     .subscribe((s) => { if (s === 'SUBSCRIBED') ch.track({ username: NET.profile.username, rating: NET.profile.rating, layout: save.layout }); });
 
   if (UI.current !== 'online') showScreen('online');
   setTab('battle');
 }
 
-function onPresence() {
-  const state = B.ch.presenceState();
+async function onPresence() {
+  const ch = B.ch, state = ch.presenceState();
   const otherKey = Object.keys(state).find((k) => k !== meId());
+  let opp = null;
+  if (otherKey) opp = B.opp?.id === otherKey ? B.opp : await verifyOpponent(otherKey, state[otherKey][0] || {});
+  if (B.ch !== ch) return; // Raum inzwischen verlassen
   const was = B.oppPresent;
-  B.oppPresent = Boolean(otherKey);
-  if (otherKey) {
-    const meta = state[otherKey][0] || {};
-    B.opp = { id: otherKey, username: meta.username || 'Gegner', rating: meta.rating ?? 1000, layout: meta.layout || 'qwertz' };
+  B.oppPresent = Boolean(opp);
+  if (opp) {
+    B.opp = opp;
     clearTimeout(B.leftTimer); B.leftTimer = null;
     if (!was && B.phase === 'room') {
       Sound.notify();
@@ -92,6 +118,26 @@ function onPresence() {
 }
 
 function sendBattle(event, payload) { B.ch?.send({ type: 'broadcast', event, payload }); }
+
+async function fetchFinishedBattle() {
+  if (!B.battle) return;
+  const { data } = await NET.sb.from('battles').select('*').eq('id', B.battle.id).maybeSingle();
+  if (data?.status === 'finished') showBattleResult(data);
+}
+
+/** Gegner nur akzeptieren, wenn er laut Datenbank wirklich in diesem Raum ist – Name & Elo aus der Datenbank. */
+async function verifyOpponent(id, meta) {
+  let b = B.battle;
+  if (!b) return null;
+  if (![b.host_id, b.guest_id].includes(id)) {
+    const { data } = await NET.sb.from('battles').select('*').eq('id', b.id).maybeSingle();
+    if (!data || ![data.host_id, data.guest_id].includes(id)) return null;
+    B.battle = b = data;
+  }
+  const { data: prof } = await NET.sb.from('profiles').select('id,username,rating').eq('id', id).maybeSingle();
+  if (!prof) return null;
+  return { id, username: prof.username, rating: prof.rating, layout: LAYOUTS[meta.layout] ? meta.layout : 'qwertz' };
+}
 
 // Sprache gibt es nur im Live-Kanal, nicht als Datenbank-Spalte
 const dbSettings = ({ lang, ...rest }) => rest;
@@ -388,10 +434,11 @@ function showBattleResult(b) {
   $('#startHint').classList.add('hide');
 
   const host = b.host_id === meId();
-  const mine = (host ? b.host_result : b.guest_result) || B.myResult || {};
-  const theirs = (host ? b.guest_result : b.host_result) || B.oppResult || null;
+  const mine = cleanResult((host ? b.host_result : b.guest_result) || B.myResult) || {};
+  const theirs = cleanResult((host ? b.guest_result : b.host_result) || B.oppResult);
   const won = b.winner_id === meId();
-  const delta = (host ? b.host_delta : b.guest_delta) ?? 0;
+  const delta = Math.round(num(host ? b.host_delta : b.guest_delta, -1000, 1000));
+  SOC.lastOpp = B.opp ? { id: B.opp.id, username: B.opp.username } : null;
   const oppName = B.opp?.username || 'Gegner';
   const line = (r) => r ? `${fmt(r.score)} Pkt · ${r.wpm} WPM · ${r.acc}%${b.mode === 'race' ? (r.finished ? ` · ${(r.time / 1000).toFixed(1)} s` : ' · nicht im Ziel') : ''}` : 'hat aufgegeben';
 
