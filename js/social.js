@@ -10,8 +10,22 @@ const SOC = {
 };
 
 /* ---------- Login & Name ---------- */
+let loginMode = 'link';
+function setLoginMode(mode) {
+  loginMode = mode;
+  const pw = mode === 'pw';
+  $('#loginModeSeg').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  $('#loginPassword').hidden = !pw;
+  $('#loginPassword').required = pw;
+  $('#loginSubmit').textContent = pw ? 'Einloggen' : 'Login-Link senden';
+  $('#loginHint').textContent = pw
+    ? 'Mit E-Mail und Passwort einloggen – ganz ohne Mail. Ein Passwort legst du nach dem ersten Login im Profil fest.'
+    : 'Gib deine E-Mail ein – du bekommst einen Login-Link. Beim ersten Mal wird so auch dein Account erstellt.';
+  $('#loginErr').textContent = '';
+}
 function openLogin() {
   $('#loginStep1').hidden = false; $('#loginStep2').hidden = true; $('#loginErr').textContent = '';
+  setLoginMode(loginMode);
   openModal('loginModal');
 }
 function openNameModal() {
@@ -25,12 +39,19 @@ function initAuthForms() {
     const btn = e.submitter; btn.disabled = true;
     $('#loginErr').textContent = '';
     try {
-      await sendMagicLink(email);
-      $('#loginStep1').hidden = true; $('#loginStep2').hidden = false;
-      $('#loginSentTo').textContent = email;
-    } catch (err) { $('#loginErr').textContent = err.message; }
+      if (loginMode === 'pw') {
+        await signInWithPassword(email, $('#loginPassword').value);
+        $('#loginPassword').value = '';
+        closeModal('loginModal');
+      } else {
+        await sendMagicLink(email);
+        $('#loginStep1').hidden = true; $('#loginStep2').hidden = false;
+        $('#loginSentTo').textContent = email;
+      }
+    } catch (err) { $('#loginErr').textContent = authErrorText(err); }
     btn.disabled = false;
   };
+  $('#loginModeSeg').onclick = (e) => { const b = e.target.closest('button[data-mode]'); if (b) setLoginMode(b.dataset.mode); };
   $('#nameForm').onsubmit = async (e) => {
     e.preventDefault();
     const name = $('#nameInput').value.trim();
@@ -289,8 +310,24 @@ async function renderProfile() {
       <div><span>Gesamtpunkte</span><b>${fmt(p.total_score)}</b></div>
       <div><span>Endlos-Rekord</span><b>${fmt(p.endless_best)}</b></div>
     </div>
+    <h3>🔒 Passwort</h3>
+    <form class="panel inline-form" id="pwForm">
+      <input type="password" id="pwInput" placeholder="Neues Passwort (mind. 6 Zeichen)" minlength="6" autocomplete="new-password" required>
+      <button class="primary">Speichern</button>
+      <span class="muted" id="pwMsg">Damit kannst du dich auf jedem Gerät ohne Login-Mail anmelden.</span>
+    </form>
     <h3>Letzte Battles</h3><div id="recentBattles"><p class="muted">Lade …</p></div>`;
   $('#logoutBtn').onclick = async () => { await signOut(); showScreen('home'); };
+  $('#pwForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = e.submitter; btn.disabled = true;
+    try {
+      await setPassword($('#pwInput').value);
+      $('#pwInput').value = '';
+      $('#pwMsg').textContent = '✅ Gespeichert! Ab jetzt kannst du dich auch mit E-Mail + Passwort anmelden.';
+    } catch (err) { $('#pwMsg').textContent = '⚠️ ' + authErrorText(err); }
+    btn.disabled = false;
+  };
 
   const { data: bs } = await NET.sb.from('battles').select('*').eq('status', 'finished')
     .or(`host_id.eq.${me},guest_id.eq.${me}`).order('finished_at', { ascending: false }).limit(10);

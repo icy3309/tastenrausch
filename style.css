@@ -438,3 +438,6 @@ input[type=range] { padding: 0; accent-color: var(--accent2); }
   .profile-stats { grid-template-columns: repeat(2, 1fr); }
   .mode-card.huge { min-height: 0; padding: 22px; }
 }
+
+/* Login: Umschalter Link / Passwort */
+#loginModeSeg { margin-bottom: 12px; }

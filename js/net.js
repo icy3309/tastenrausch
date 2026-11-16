@@ -65,6 +65,25 @@ async function sendMagicLink(email) {
   if (error) throw error;
 }
 
+async function signInWithPassword(email, password) {
+  const { error } = await NET.sb.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+}
+async function setPassword(password) {
+  const { error } = await NET.sb.auth.updateUser({ password });
+  if (error) throw error;
+}
+/** Supabase-Fehler in verständliches Deutsch übersetzen. */
+function authErrorText(err) {
+  const m = String(err?.message || err);
+  if (/rate limit|too many|security purposes/i.test(m)) return '⏳ Zu viele Login-Mails in kurzer Zeit. Warte etwa eine Stunde – oder melde dich mit Passwort an, falls du schon eins festgelegt hast.';
+  if (/invalid login credentials/i.test(m)) return 'E-Mail oder Passwort falsch. Noch kein Passwort? Melde dich einmal per Login-Link an und leg im Profil eins fest.';
+  if (/password should be|at least 6/i.test(m)) return 'Das Passwort muss mindestens 6 Zeichen lang sein.';
+  if (/email not confirmed/i.test(m)) return 'Diese E-Mail ist noch nicht bestätigt – melde dich einmal per Login-Link an.';
+  if (/same password|different from the old/i.test(m)) return 'Das ist schon dein aktuelles Passwort.';
+  return m;
+}
+
 async function createProfile(username) {
   const { error } = await NET.sb.from('profiles').insert({ id: NET.user.id, username });
   if (error) {

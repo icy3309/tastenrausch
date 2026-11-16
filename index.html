@@ -181,10 +181,15 @@
     <div class="card small">
       <h2>🔑 Online spielen</h2>
       <div id="loginStep1">
-        <p class="muted">Gib deine E-Mail ein – du bekommst einen Login-Link. Kein Passwort nötig.</p>
+        <div class="seg" id="loginModeSeg">
+          <button type="button" data-mode="link" class="on">📧 Login-Link</button>
+          <button type="button" data-mode="pw">🔒 Passwort</button>
+        </div>
+        <p class="muted" id="loginHint">Gib deine E-Mail ein – du bekommst einen Login-Link. Beim ersten Mal wird so auch dein Account erstellt.</p>
         <form id="loginForm" class="stack">
           <input type="email" id="loginEmail" required placeholder="du@beispiel.de" autocomplete="email">
-          <button class="primary">Login-Link senden</button>
+          <input type="password" id="loginPassword" placeholder="Passwort" autocomplete="current-password" hidden>
+          <button class="primary" id="loginSubmit">Login-Link senden</button>
         </form>
       </div>
       <div id="loginStep2" hidden>
