@@ -147,13 +147,25 @@ function genText(lv, rng = Math.random, len = lv.len, lang = save.lang || 'de') 
   const pick = (a) => a[rand(a.length)];
   const ascii = !LAYOUTS[lv.layout]?.umlauts;
 
-  if (lv.sentences) {
-    const pool = (SENTENCE_BANK[lang] || SENTENCE_BANK.de).map((x) => (ascii ? translit(x) : x));
+  // Echte Sätze: feste Sätze gemischt mit Sätzen aus dem Baukasten (js/sentences.js).
+  // Ab „Satzzeichen“ (Level 12) gibt es Sätze; ohne Shift-Level noch kleingeschrieben.
+  if (lv.sentences || lv.punct) {
+    const fixed = lv.sentences ? (SENTENCE_BANK[lang] || SENTENCE_BANK.de) : [];
+    const pool = fixed.map((x) => (ascii ? translit(x) : x));
     for (let i = pool.length - 1; i > 0; i--) { const j = rand(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-    const out = [];
-    let i = 0, total = 0;
-    while (total < len) { const s = pool[i++ % pool.length]; out.push(s); total += s.length + 1; }
-    return out.join(' ');
+    const allowed = new Set([...lv.keys, ' ', ...(lv.caps ? [...lv.keys].map((c) => c.toUpperCase()) : [])]);
+    const typable = (s) => lv.sentences || [...s].every((c) => allowed.has(c));
+    const out = [], recent = [];
+    let i = 0, total = 0, guard = 0;
+    while (total < len && guard++ < 500) {
+      let s = pool.length && rng() < 0.3 ? pool[i++ % pool.length] : buildSentence(lang, rng);
+      if (ascii) s = translit(s);
+      if (!lv.caps && !lv.sentences) s = s.toLowerCase();
+      if (recent.includes(s) || !typable(s)) continue;
+      recent.push(s); if (recent.length > 30) recent.shift();
+      out.push(s); total += s.length + 1;
+    }
+    if (out.length) return out.join(' ');
   }
 
   const letters = [...new Set(lv.keys)].filter((c) => /\p{L}/u.test(c));
