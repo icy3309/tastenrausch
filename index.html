@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tastenrausch – 10-Finger-Tippen lernen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="fx"></canvas>
+
+  <header class="topbar">
+    <div class="logo" id="logo">TASTEN<span>RAUSCH</span></div>
+    <div class="meta">
+      <div class="pill" title="Tage in Folge gespielt">🔥 <b id="dayStreak">0</b> <small>Tage</small></div>
+      <div class="pill" title="Gesammelte Sterne">⭐ <b id="starCount">0</b></div>
+      <div class="pill" title="Gesamtpunkte">🏆 <b id="totalScore">0</b></div>
+      <div class="pill rank" id="rank">Tipp-Neuling</div>
+      <button class="pill account" id="accountBtn" hidden>🔑 Anmelden</button>
+      <button class="pill" id="settingsBtn" title="Sprache & Tastatur-Layout">⚙️ <span id="settingsLabel"></span></button>
+      <button class="pill btn-icon" id="musicBtn" title="Menü-Musik an/aus">🎵</button>
+      <button class="pill btn-icon" id="muteBtn" title="Ton an/aus">🔊</button>
+    </div>
+  </header>
+
+  <!-- ===== STARTSEITE ===== -->
+  <main id="home" class="screen">
+    <section class="hero">
+      <h1>Lerne <em>10-Finger-Tippen</em><br>wie ein Arcade-Game.</h1>
+      <p>Baue Streaks auf, steigere deinen Multiplikator bis <b class="godlike-word">GODLIKE</b>, sammle goldene Buchstaben – allein oder live gegen deine Freunde.</p>
+    </section>
+    <div class="mode-cards two">
+      <button class="mode-card huge sp" data-go="sp">
+        <div class="mc-icon">🎮</div><div class="mc-title">Singleplayer</div>
+        <div class="mc-desc">Kampagne mit 15 Leveln von ASDF bis zum Boss – oder Endlos gegen die Uhr.</div>
+        <div class="mc-meta">Ohne Anmeldung spielbar</div>
+      </button>
+      <button class="mode-card huge online" data-go="online">
+        <div class="mc-icon">🌐</div><div class="mc-title">Online</div>
+        <div class="mc-desc">Live-Battles im Rennen oder Zeit-Duell, mit Angriffen. Freunde, Rangliste &amp; Elo.</div>
+        <div class="mc-meta">Login per E-Mail-Link</div>
+      </button>
+    </div>
+    <div class="tier-legend" id="tierLegend"></div>
+    <p class="footnote">Deutsch oder Englisch, QWERTZ oder QWERTY – stell es oben unter ⚙️ ein. Schau nicht auf deine Finger – schau auf die Bildschirm-Tastatur!</p>
+  </main>
+
+  <!-- ===== SINGLEPLAYER-HUB ===== -->
+  <main id="sp" class="screen">
+    <div class="sub-head"><button class="ghost" data-back>← Zurück</button><h2>🎮 Singleplayer</h2></div>
+    <div class="mode-cards two">
+      <button class="mode-card huge" data-go="campaign">
+        <div class="mc-icon">🗺️</div><div class="mc-title">Kampagne</div>
+        <div class="mc-desc">15 Level, die Schritt für Schritt die ganze Tastatur freischalten. Bis zu 3 Sterne pro Level.</div>
+        <div class="mc-meta" id="campMeta"></div>
+      </button>
+      <button class="mode-card huge endless" data-act="endless">
+        <div class="mc-icon">∞</div><div class="mc-title">Endlos</div>
+        <div class="mc-desc">Die Zeit läuft ab – jeder Treffer gibt Zeit zurück, Fehler kosten Zeit. Es wird immer schneller und schwerer.</div>
+        <div class="mc-meta" id="endlessMeta"></div>
+      </button>
+    </div>
+  </main>
+
+  <!-- ===== KAMPAGNE ===== -->
+  <main id="campaign" class="screen">
+    <div class="sub-head"><button class="ghost" data-back>← Zurück</button><h2>🗺️ Kampagne</h2><button class="ghost home-btn" data-go="home">⌂ Hauptmenü</button></div>
+    <section class="levels" id="levelGrid"></section>
+  </main>
+
+  <!-- ===== ONLINE-HUB ===== -->
+  <main id="online" class="screen">
+    <div class="sub-head"><button class="ghost" data-back>← Zurück</button><h2>🌐 Online</h2></div>
+    <div class="panel gate" id="onlineGate" hidden></div>
+    <div id="onlineHub" hidden>
+      <nav class="tabs" id="onlineTabs">
+        <button data-tab="battle" class="active">⚔ Battle</button>
+        <button data-tab="friends">👥 Freunde <span class="badge" id="friendBadge" hidden></span></button>
+        <button data-tab="leaderboard">🏆 Rangliste</button>
+        <button data-tab="profile">👤 Profil</button>
+      </nav>
+      <section class="tab-panel" id="tab-battle"></section>
+      <section class="tab-panel" id="tab-friends" hidden>
+        <form class="panel inline-form" id="friendForm">
+          <input id="friendInput" placeholder="Spielername deines Freundes" maxlength="16" autocomplete="off" spellcheck="false">
+          <button class="primary">Hinzufügen</button>
+          <span class="muted" id="friendMsg"></span>
+        </form>
+        <h3>Anfragen</h3><div id="friendRequests"></div>
+        <h3>Freunde</h3><div id="friendList"></div>
+      </section>
+      <section class="tab-panel" id="tab-leaderboard" hidden>
+        <nav class="subtabs" id="lbTabs">
+          <button data-lb="all" class="active">Gesamt</button>
+          <button data-lb="week">Diese Woche</button>
+          <button data-lb="rating">Battle-Elo</button>
+          <button data-lb="endless">Endlos</button>
+          <button data-lb="level">Pro Level</button>
+          <button data-lb="friends">Freunde</button>
+        </nav>
+        <select id="lbLevel" hidden></select>
+        <div id="lbTable"></div>
+      </section>
+      <section class="tab-panel" id="tab-profile" hidden></section>
+    </div>
+  </main>
+
+  <!-- ===== SPIEL ===== -->
+  <main id="game" class="screen">
+    <div class="hud">
+      <div class="hud-left">
+        <button class="ghost" id="backBtn">← Zurück <kbd>Esc</kbd></button>
+        <div class="lvl-name" id="lvlName">Level</div>
+      </div>
+      <div class="hud-stats">
+        <div><span>Punkte</span><b id="score">0</b></div>
+        <div><span>WPM</span><b id="wpm">0</b></div>
+        <div><span>Genauigkeit</span><b id="acc">100%</b></div>
+        <div><span id="timeLabelHud">Zeit</span><b id="time">0:00</b></div>
+      </div>
+    </div>
+
+    <div class="opp" id="oppPanel">
+      <div class="opp-row">
+        <div class="opp-name">⚔ <span id="oppName">Gegner</span></div>
+        <div class="opp-tier" id="oppTier">–</div>
+        <div class="opp-score"><span>Punkte</span> <b id="oppScore">0</b></div>
+      </div>
+      <div class="lane"><span class="lane-label">Du</span><div class="lane-track"><div class="lane-fill me" id="raceMe"></div></div></div>
+      <div class="lane"><span class="lane-label" id="oppLaneLabel">Gegner</span><div class="lane-track"><div class="lane-fill them" id="raceOpp"></div></div></div>
+    </div>
+
+    <div class="timebar" id="timebar"><div class="time-fill" id="timeFill"></div><span class="time-text" id="timeText"></span></div>
+
+    <div class="combo" id="combo">
+      <div class="combo-streak"><b id="streak">0</b><span>Streak</span></div>
+      <div class="combo-mid">
+        <div class="combo-title" id="tierTitle">Leg los!</div>
+        <div class="bar"><div class="bar-fill" id="tierBar"></div></div>
+        <div class="combo-next" id="tierNext">Noch 10 bis ×2</div>
+      </div>
+      <div class="combo-mult" id="mult">×1</div>
+      <div class="shields" id="shields" title="Schilde schützen deinen Streak vor einem Fehler (und blocken Angriffe)"></div>
+    </div>
+
+    <div class="start-hint" id="startHint"></div>
+    <div class="textbox" id="textbox">
+      <div class="text-clip"><div class="text-inner" id="textInner"></div></div>
+    </div>
+
+    <div class="finger-hint" id="fingerHint">&nbsp;</div>
+
+    <div class="trainer">
+      <div class="hand left">
+        <div class="f" data-f="lp"></div><div class="f" data-f="lr"></div><div class="f" data-f="lm"></div><div class="f" data-f="li"></div><div class="f thumb" data-f="th"></div>
+      </div>
+      <div class="keyboard" id="keyboard"></div>
+      <div class="hand right">
+        <div class="f thumb" data-f="th"></div><div class="f" data-f="ri"></div><div class="f" data-f="rm"></div><div class="f" data-f="rr"></div><div class="f" data-f="rp"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== ERGEBNIS ===== -->
+  <div class="modal" id="result">
+    <div class="card">
+      <div class="result-head" id="resHead"></div>
+      <div class="stars" id="resStars"></div>
+      <div class="res-stats" id="resStats"></div>
+      <ul class="bonus-list" id="resBonus"></ul>
+      <div class="res-total"><span id="resTotalLabel">Gesamt</span><b id="resTotal">0</b></div>
+      <div class="res-note" id="resNote"></div>
+      <div class="res-actions" id="resActions"></div>
+    </div>
+  </div>
+
+  <!-- ===== LOGIN ===== -->
+  <div class="modal form" id="loginModal">
+    <div class="card small">
+      <h2>🔑 Online spielen</h2>
+      <div id="loginStep1">
+        <p class="muted">Gib deine E-Mail ein – du bekommst einen Login-Link. Kein Passwort nötig.</p>
+        <form id="loginForm" class="stack">
+          <input type="email" id="loginEmail" required placeholder="du@beispiel.de" autocomplete="email">
+          <button class="primary">Login-Link senden</button>
+        </form>
+      </div>
+      <div id="loginStep2" hidden>
+        <p>📬 Wir haben einen Link an <b id="loginSentTo"></b> geschickt. Klick ihn an – du landest dann direkt im Online-Bereich.</p>
+        <p class="muted">Nichts angekommen? Schau im Spam-Ordner nach.</p>
+      </div>
+      <p class="err" id="loginErr"></p>
+      <button class="ghost" data-close>Schließen</button>
+    </div>
+  </div>
+
+  <div class="modal form" id="nameModal">
+    <div class="card small">
+      <h2>🏷 Dein Spielername</h2>
+      <p class="muted">So sehen dich andere in Battles, Freundeslisten und der Rangliste.</p>
+      <form id="nameForm" class="stack">
+        <input id="nameInput" maxlength="16" required placeholder="z. B. TippNinja_42" autocomplete="off" spellcheck="false">
+        <button class="primary">Los geht’s</button>
+      </form>
+      <p class="err" id="nameErr"></p>
+      <button class="ghost" data-close>Später</button>
+    </div>
+  </div>
+
+  <div class="modal form" id="settingsModal">
+    <div class="card small">
+      <h2>⚙️ Sprache &amp; Tastatur</h2>
+      <div class="set">
+        <label>Sprache der Übungstexte</label>
+        <div class="seg" id="langSeg"></div>
+        <small>Alle Level üben mit echten Wörtern dieser Sprache – immer nur mit den Tasten, die du schon gelernt hast.</small>
+      </div>
+      <div class="set">
+        <label>Tastatur-Layout</label>
+        <div class="seg" id="layoutSeg"></div>
+        <small id="layoutDesc"></small>
+      </div>
+      <button class="primary" data-close>Fertig</button>
+    </div>
+  </div>
+
+  <div class="announce" id="announce"><div class="a-title" id="aTitle"></div><div class="a-sub" id="aSub"></div></div>
+  <div class="toasts" id="toasts"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/words.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/net.js"></script>
+  <script src="js/social.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/endless.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
