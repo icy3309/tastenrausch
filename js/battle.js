@@ -257,12 +257,12 @@ function beginCountdown(p) {
   startGame({ run: B.run, mode: 'battle', back: 'online', onExit: () => { leaveRoom(); } });
 
   let n = 3;
-  announce('3', 'Mach dich bereit!', '#00e5ff'); Sound.beep(false);
+  announce('3', 'Mach dich bereit!', '#00e5ff', { center: true }); Sound.beep(false);
   const iv = setInterval(() => {
     n--;
-    if (n > 0) { announce(String(n), '', '#00e5ff'); Sound.beep(false); return; }
+    if (n > 0) { announce(String(n), '', '#00e5ff', { center: true }); Sound.beep(false); return; }
     clearInterval(iv);
-    announce('LOS!', '', '#3ddc97'); Sound.beep(true);
+    announce('LOS!', '', '#3ddc97', { center: true }); Sound.beep(true);
     B.phase = 'playing';
     B.run.lock(false);
     B.run.startClock();

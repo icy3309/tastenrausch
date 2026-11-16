@@ -199,11 +199,30 @@ function shake(big) {
   el.classList.remove('shake', 'shake-big'); void el.offsetWidth;
   el.classList.add(big ? 'shake-big' : 'shake');
 }
-function announce(title, sub, color) {
+/**
+ * Große Einblendung („GODLIKE“). Im Spiel landet sie nicht mehr mitten auf dem Text,
+ * sondern unter der Bildschirm-Tastatur – oder, wenn dort kein Platz ist, über ihr.
+ * `center: true` = klassisch bildschirmfüllend (z.B. Countdown, bei dem man noch nicht tippt).
+ */
+function announce(title, sub, color, { center = false } = {}) {
   const a = $('#announce');
   a.style.setProperty('--tier', color);
   $('#aTitle').textContent = title; $('#aSub').textContent = sub || '';
-  a.classList.remove('show'); void a.offsetWidth; a.classList.add('show');
+  a.classList.remove('show', 'zone');
+  a.style.top = a.style.height = a.style.fontSize = '';
+  const trainer = document.querySelector('#game .trainer');
+  if (!center && UI.current === 'game' && trainer) {
+    const t = trainer.getBoundingClientRect();
+    const below = innerHeight - t.bottom;
+    const [top, h] = below >= 100 ? [t.bottom, below] : [Math.max(t.top, 0), Math.min(t.height, innerHeight - Math.max(t.top, 0))];
+    a.classList.add('zone');
+    a.style.top = top + 'px';
+    a.style.height = h + 'px';
+    // Schrift passt sich der Höhe und der Wortlänge an
+    const byHeight = h * (sub ? 0.42 : 0.6), byWidth = (innerWidth * 0.9) / (Math.max(title.length, 4) * 0.82);
+    a.style.fontSize = Math.round(Math.max(26, Math.min(80, byHeight, byWidth))) + 'px';
+  }
+  void a.offsetWidth; a.classList.add('show');
 }
 
 /* =========== Toasts =========== */
