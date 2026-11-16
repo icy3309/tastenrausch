@@ -19,7 +19,7 @@ const SITE_OWNER = {
   name: 'Jasper Haag',
   street: '',
   city: '',
-  email: '',            // ← Kontakt-E-Mail eintragen
+  email: 'icy3309adi@gmail.com',
 };
 
 const SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
